@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="color-scheme" content="light dark">
+	<script>
+		// Apply the saved theme, else the system one, before first paint to avoid a flash.
+		let saved; try { saved = localStorage.getItem('theme'); } catch (e) {}
+		document.documentElement.dataset.theme = saved || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+	</script>
+	<title>Capteur météo connecté – Antoine Champagne</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link rel="stylesheet"
+		href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap">
+	<link rel="stylesheet" href="../css/site.css">
+</head>
+<body>
+	<header class="site-header">
+		<div class="wrap header-row">
+			<a class="wordmark" href="../index.html">Antoine Champagne</a>
+
+			<nav class="nav-desktop" aria-label="Menu principal">
+				<a href="../index.html#projets" aria-current="true">Projets</a>
+				<a href="../index.html#parcours">Parcours</a>
+				<a href="../a-propos.html">À propos</a>
+				<a href="mailto:champagneantoine60@gmail.com">Contact</a>
+				<a class="btn btn-secondary" href="../cv.pdf"
+					download="CV_Antoine_Champagne.pdf">CV (PDF)</a>
+				<button type="button" class="theme-toggle"
+					aria-label="Basculer entre thème clair et sombre">◐</button>
+			</nav>
+
+			<details class="nav-mobile">
+				<summary class="btn btn-secondary"><span
+					class="when-closed">Menu</span><span
+					class="when-open">Fermer</span></summary>
+				<div class="menu-panel">
+					<nav aria-label="Menu principal">
+						<a href="../index.html#projets"
+							aria-current="true">Projets</a>
+						<a href="../index.html#parcours">Parcours</a>
+						<a href="../a-propos.html">À propos</a>
+						<a
+							href="mailto:champagneantoine60@gmail.com">Contact</a>
+					</nav>
+					<a class="btn btn-primary" href="../cv.pdf"
+						download="CV_Antoine_Champagne.pdf">Télécharger le
+						CV</a>
+					<button type="button"
+						class="theme-toggle theme-toggle-wide">Thème clair /
+						sombre</button>
+					<a class="menu-email"
+						href="mailto:champagneantoine60@gmail.com">champagneantoine60@gmail.com</a>
+				</div>
+			</details>
+		</div>
+	</header>
+
+	<main class="wrap project">
+	<a class="back" href="../index.html#projets">Retour aux projets</a>
+	<h1 class="page-title">Capteur météo connecté</h1>
+	<p class="lede">Un ESP32 lit la température, l’humidité et la pression d’une
+		pièce avec un capteur BME280 et publie chaque mesure en MQTT. Sur mon
+		homelab Proxmox, un bridge Python la transmet à une API FastAPI qui la
+		stocke dans SQLite, et Grafana affiche le tout dans des graphiques.</p>
+
+	<dl class="facts">
+		<div><dt>Matériel</dt><dd>ESP32, capteur BME280 (I2C)</dd></div>
+		<div><dt>Stack</dt><dd>Python, FastAPI, SQLModel, SQLite</dd></div>
+		<div><dt>Messagerie</dt><dd>MQTT, Mosquitto, paho-mqtt</dd></div>
+		<div><dt>Affichage et hébergement</dt><dd>Grafana, Docker Compose,
+			Proxmox</dd></div>
+		<div><dt>Code source</dt><dd><a href="https://github.com/Userf9e5ce3edf/iot-project-meteo">Dépôt GitHub</a></dd></div>
+	</dl>
+
+	<div class="with-toc">
+	<nav class="toc" aria-label="Sommaire">
+		<ol>
+			<li><a href="#vue-ensemble">1. Vue d’ensemble</a>
+				<ol>
+					<li><a href="#principe">Principe</a></li>
+					<li><a href="#chemin">Chemin d’une mesure</a></li>
+					<li><a href="#briques">Les briques</a></li>
+				</ol></li>
+			<li><a href="#mise-en-place">2. Mise en place</a>
+				<ol>
+					<li><a href="#esp32">ESP32 et BME280</a></li>
+					<li><a href="#mosquitto">Compose et Mosquitto</a></li>
+					<li><a href="#bridge">Bridge MQTT vers API</a></li>
+					<li><a href="#api">API et SQLite</a></li>
+					<li><a href="#precision">Précision selon la période</a></li>
+					<li><a href="#grafana">Grafana</a></li>
+				</ol></li>
+			<li><a href="#resultat">3. Résultat</a>
+				<ol>
+					<li><a href="#tableau">Tableau de bord</a></li>
+					<li><a href="#verifier">Vérifier</a></li>
+				</ol></li>
+		</ol>
+	</nav>
+
+	<div class="parts">
+	
+	<section class="part">
+		<div class="prose">
+			<h2 id="vue-ensemble">1. Vue d’ensemble</h2>
+
+			<h3 id="principe">Principe</h3>
+			<p>Afficher la température, l’humidité et la pression d’une pièce dans un tableau
+				de bord, depuis n’importe quel appareil du réseau.</p>
+		</div>
+
+		
+		<figure class="cover">
+			<img class="only-light" src="../img/projets/capteur-meteo/schema-meteo-light.png"
+				alt="Schéma du chemin d’une mesure : l’ESP32 lit le BME280 et publie en MQTT vers Mosquitto, le bridge poste la mesure à l’API FastAPI qui l’écrit dans SQLite, et Grafana interroge l’API pour l’afficher dans le navigateur.">
+			<img class="only-dark" src="../img/projets/capteur-meteo/schema-meteo-dark.png"
+				alt="Schéma du chemin d’une mesure : l’ESP32 lit le BME280 et publie en MQTT vers Mosquitto, le bridge poste la mesure à l’API FastAPI qui l’écrit dans SQLite, et Grafana interroge l’API pour l’afficher dans le navigateur.">
+			<figcaption>Chemin d’une mesure, du capteur au
+				navigateur.</figcaption>
+		</figure>
+
+		<div class="prose">
+			<h3 id="chemin">Chemin d’une mesure</h3>
+			<ol>
+				<li>L’ESP32 lit le BME280 en I2C et publie un JSON sur le topic
+					<code>sensors/&lt;device_id&gt;/bme280</code> :
+<pre><code>{"ts": 1792320840, "temp": 17.6, "hum": 64.7, "pres": 1022.3}</code></pre></li>
+				<li>Mosquitto reçoit le message sur le port 1883, après
+					authentification par utilisateur et mot de passe.</li>
+				<li>Le bridge, abonné à <code>sensors/+/bme280</code>, lit
+					l’identifiant de la carte dans le topic et poste la mesure
+					sur <code>POST /readings</code>.</li>
+				<li>L’API vérifie chaque valeur et l’écrit dans SQLite.</li>
+				<li>Grafana interroge l’API avec le plugin Infinity et affiche
+					les grahpiques.</li>
+			</ol>
+			<p>Une valeur hors des plages du BME280 est refusée par l’API (code
+				422), un capteur défaillant ne pollue pas l’historique.</p>
+
+			<h3 id="briques">Les briques</h3>
+		</div>
+		<div class="prose prose-wide">
+			<table>
+				<thead><tr><th>Brique</th><th>Rôle</th></tr></thead>
+				<tbody>
+					<tr><td>ESP32 + BME280</td><td>Lit le capteur en I2C et
+						publie en MQTT. L’horodatage <code>ts</code>
+						est ajouté par la carte, en secondes Unix.</td></tr>
+					<tr><td>Mosquitto</td><td>Broker MQTT dans un conteneur
+						Docker. Accès par mot de passe avec un compte pour les
+						ESP32, un pour le bridge.</td></tr>
+					<tr><td>Bridge Python</td><td>Abonné aux topics avec
+						paho-mqtt. Se reconnecte seul au broker et tente trois
+						fois chaque envoi si l’API ne répond pas.</td></tr>
+					<tr class="chosen"><td>API FastAPI</td><td>Valide et stocke
+						les mesures, puis donne l’historique moyenné selon la
+						période demandée. Documentation Swagger sur
+						<code>/docs</code>.</td></tr>
+					<tr><td>SQLite</td><td>Un seul fichier sur un dossier monté,
+						en mode WAL. Grafana lit pendant que le bridge
+						écrit.</td></tr>
+					<tr><td>Grafana + Infinity</td><td>Lit l’API en JSON côté
+						serveur. La source de données et le tableau de bord sont
+						provisionnés par fichiers.</td></tr>
+				</tbody>
+			</table>
+		</div>
+	</section>
+
+	
+	<section class="part">
+		<div class="prose">
+			<h2 id="mise-en-place">2. Mise en place</h2>
+
+			<h3 id="esp32">2.1 ESP32 et BME280</h3>
+			<p>L'ESP32 lit les mesures du capteur BME280 en I2C et publie un JSON avec les
+				mesures. 
+				Chaque carte a un identifiant unique, utilisé à la fois comme 
+				client ID MQTT et dans le topic :</p>
+<pre><code>#define DEVICE_ID  "esp32-bme280-001"
+#define MQTT_TOPIC "sensors/" DEVICE_ID "/bme280"
+
+client.connect(DEVICE_ID, MQTT_USER, MQTT_PASS);
+client.publish(MQTT_TOPIC, payload);</code></pre>
+			<ul>
+				<li>Mosquitto n’accepte qu’une connexion par client ID : deux
+					cartes avec le même identifiant se déconnectent l’une
+					l’autre.</li>
+				<li>L’horloge de la carte doit être synchronisée (NTP), puisque
+					<code>ts</code> vient d’elle.</li>
+			</ul>
+
+		</div>
+
+		<figure class="cover">
+			<img style="width:70%" src="../img/projets/capteur-meteo/esp32-bme280.png"
+				alt="L’ESP32 relié au capteur BME280, avec un écran optionnel.">
+			<figcaption>L’ESP32 relié au capteur BME280, avec un écran optionnel.</figcaption>
+		</figure>
+
+		<figure class="cover">
+			<img style="width:50%" src="../img/projets/capteur-meteo/schema-circuit.png"
+				alt="Schéma de câblage : le BME280 et l’écran OLED sont reliés à l’ESP32-S3 par deux fils partagés, SCL en bleu et SDA en violet.">
+			<figcaption>Schéma de câblage : le BME280 et l’écran partagent le même bus I2C.</figcaption>
+		</figure>
+
+		<div class="prose">
+			<h3 id="mosquitto">2.2 Compose et Mosquitto</h3>
+			<p>Les quatre services tournent dans un même
+				<code>docker-compose.yaml</code> sur l’hôte Docker. Les
+				identifiants viennent d’un fichier <code>.env</code> placé à
+				côté, jamais commité. Version simplifiée :</p>
+<pre><code>services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./config:/mosquitto/config
+      - ./data:/mosquitto/data
+
+  api:
+    build: ./api
+    container_name: api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DB_PATH: /data/readings.db
+    volumes:
+      - ./api-data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      retries: 5
+
+  bridge:
+    build: ./bridge
+    restart: unless-stopped
+    environment:
+      MQTT_HOST: mosquitto
+      MQTT_USER: ${MQTT_USER}
+      MQTT_PASS: ${MQTT_PASS}
+      MQTT_TOPIC: sensors/+/bme280
+      API_URL: http://api:8000/readings
+    depends_on:
+      mosquitto:
+        condition: service_started
+      api:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_PLUGINS_PREINSTALL: yesoreyeram-infinity-datasource
+      GF_USERS_DEFAULT_THEME: system
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana-data:/var/lib/grafana
+    depends_on:
+      api:
+        condition: service_healthy</code></pre>
+			<p>Mosquitto refuse les connexions anonymes.
+				<code>config/mosquitto.conf</code> :</p>
+<pre><code>listener 1883
+allow_anonymous false
+password_file /mosquitto/config/passwd
+persistence true
+persistence_location /mosquitto/data/</code></pre>
+			<p>Les deux comptes se créent avec l’outil de l’image, depuis
+				<code>~/mosquitto</code> :</p>
+<pre><code>docker run --rm -v "$PWD/config:/mosquitto/config" eclipse-mosquitto:2 \
+  mosquitto_passwd -b -c /mosquitto/config/passwd esp32 &lt;MOT_DE_PASSE_1&gt;
+docker run --rm -v "$PWD/config:/mosquitto/config" eclipse-mosquitto:2 \
+  mosquitto_passwd -b /mosquitto/config/passwd bridge &lt;MOT_DE_PASSE_2&gt;</code></pre>
+			<p class="note"><code>-c</code> recrée le fichier : seulement pour
+				le premier compte. Le fichier <code>passwd</code> doit
+				appartenir à l’utilisateur 1883, celui qui fait tourner
+				Mosquitto dans le conteneur.</p>
+
+			<h3 id="bridge">2.3 Bridge MQTT vers API</h3>
+			<p>Le bridge est un petit service Python, avec paho-mqtt et
+				requests. Il lit sa configuration dans les variables
+				d’environnement du compose. Son cœur, simplifié :</p>
+<pre><code>def on_connect(client, userdata, flags, reason_code, properties):
+    # S'abonner ici rétablit l'abonnement après chaque reconnexion
+    client.subscribe(MQTT_TOPIC, qos=1)
+
+def on_message(client, userdata, msg):
+    device_id = msg.topic.split("/")[1]
+    data = json.loads(msg.payload)
+    post_reading({
+        "device_id": device_id,
+        "ts": int(data["ts"]),
+        "temp": float(data["temp"]),
+        "hum": float(data["hum"]),
+        "pres": float(data["pres"]),
+    })</code></pre>
+			<ul>
+				<li>Un message mal formé ou incomplet est signalé dans les
+					logs du bridge, puis ignoré.</li>
+				<li>Si l’API répond par une erreur 4xx, la mesure est rejetée
+					sans nouvel essai. Sans réponse ou en 5xx, trois tentatives
+					à 2 s d’intervalle.</li>
+				<li>Le bridge attend Mosquitto au démarrage
+					(<code>retry_first_connection=True</code>) : l’ordre de
+					lancement des conteneurs n’a pas d’importance.</li>
+			</ul>
+
+			<h3 id="api">2.4 API et SQLite</h3>
+			<p>L’API FastAPI tient dans un fichier. SQLModel crée la table au
+				premier démarrage, et Pydantic valide chaque mesure aux limites
+				du BME280 : de −40 à 85 °C, de 0 à 100 % d’humidité et de 300 à
+				1100 hPa.</p>
+		</div>
+		<div class="prose prose-wide">
+			<table>
+				<thead><tr><th>Méthode</th><th>Route</th><th>Rôle</th></tr></thead>
+				<tbody>
+					<tr><td>POST</td><td><code>/readings</code></td><td>Enregistre
+						une mesure (utilisée par le bridge)</td></tr>
+					<tr><td>GET</td><td><code>/readings</code></td><td>Mesures
+						brutes sur une période, filtrables par
+						appareil</td></tr>
+					<tr><td>GET</td><td><code>/readings/latest</code></td><td>Dernière
+						mesure de chaque appareil</td></tr>
+					<tr
+						class="chosen"><td>GET</td><td><code>/readings/history</code></td><td>Moyennes
+						par intervalle, pour un ou plusieurs appareils</td></tr>
+					<tr><td>GET</td><td><code>/devices</code></td><td>Liste des
+						appareils connus</td></tr>
+					<tr><td>GET</td><td><code>/health</code></td><td>Répond au
+						healthcheck Docker</td></tr>
+				</tbody>
+			</table>
+		</div>
+		<div class="prose">
+			<p>Le fichier SQLite est en mode WAL : Grafana lit pendant que le
+				bridge écrit, sans blocage.</p>
+
+			<h3 id="precision">2.5 Précision selon la période</h3>
+			<p>Renvoyer toutes les mesures brutes ne tient pas sur de longues
+				périodes. Avec une mesure toutes les quelques secondes, quelques
+				mois d’historique représentent déjà des centaines de milliers de
+				lignes. L’API devrait toutes les convertir en JSON, les envoyer
+				à Grafana, qui les afficherait sur un graphique de quelques
+				centaines de pixels de large.</p>
+			<p><code>/readings/history</code> calcule donc des moyennes par
+				intervalle dans SQLite, avec une précision qui suit la durée
+				demandée :</p>
+		</div>
+		<div class="prose prose-wide">
+			<table>
+				<thead><tr><th>Période
+					demandée</th><th>Intervalle</th><th>Points au
+					maximum</th></tr></thead>
+				<tbody>
+					<tr><td>Jusqu’à 2 jours</td><td>1
+						minute</td><td>2880</td></tr>
+					<tr><td>Jusqu’à 14 jours</td><td>30
+						minutes</td><td>672</td></tr>
+					<tr><td>Jusqu’à 90 jours</td><td>3
+						heures</td><td>720</td></tr>
+					<tr><td>Au-delà</td><td>1 jour</td><td>un par jour</td></tr>
+				</tbody>
+			</table>
+		</div>
+		<div class="prose">
+<pre><code># (durée maximale en secondes, intervalle en secondes)
+BUCKET_TIERS = [
+    (2 * 86400, 60),       # jusqu'à 2 jours : 1 minute
+    (14 * 86400, 1800),    # jusqu'à 14 jours : 30 minutes
+    (90 * 86400, 10800),   # jusqu'à 90 jours : 3 heures
+]
+BUCKET_DEFAULT = 86400     # au-delà : 1 jour
+
+def auto_bucket(range_seconds: int) -&gt; int:
+    for longest, bucket in BUCKET_TIERS:
+        if range_seconds &lt;= longest:
+            return bucket
+    return BUCKET_DEFAULT</code></pre>
+			<p>Un paramètre <code>bucket</code> explicite reste prioritaire. 
+				Les statistiques du tableau de bord demandent toujours les
+				dernières 24 h à la minute, quelle que soit la période
+				affichée.</p>
+			<p>Le même endpoint accepte plusieurs appareils à la fois (paramètre
+				<code>devices</code>, liste séparée par des virgules) et renvoie
+				l’identifiant de l’appareil sur chaque ligne. C’est ce
+				qu’utilisent les graphiques de comparaison.</p>
+
+			<h3 id="grafana">2.6 Grafana</h3>
+			<p>Grafana lit l’API avec le plugin Infinity, installé au démarrage
+				par <code>GF_PLUGINS_PREINSTALL</code>. La source de données et
+				le tableau de bord sont provisionnés par fichiers : ils
+				apparaissent au premier lancement, sans clic.</p>
+<pre><code>apiVersion: 1
+datasources:
+  - name: Readings API
+    uid: readings-api
+    type: yesoreyeram-infinity-datasource
+    access: proxy
+    isDefault: true
+    jsonData:
+      allowedHosts:
+        - http://api:8000</code></pre>
+			<p><code>allowedHosts</code> limite Infinity à l’API. Les requêtes
+				partent du serveur Grafana, sur le réseau interne de Docker.
+				Le tableau de bord contient :</p>
+			<ul>
+				<li>trois statistiques avec leur courbe des dernières 24 h :
+					température, humidité et pression</li>
+				<li>la température et l’humidité sur deux axes, qui suivent le
+					sélecteur de période</li>
+				<li>la pression sur 7 jours</li>
+				<li>un tableau du minimum, du maximum et de la valeur actuelle
+					sur 24 h</li>
+				<li>deux graphiques de comparaison, température et humidité,
+					avec une courbe par capteur choisi dans un menu à sélection
+					multiple.</li>
+			</ul>
+			<p>Dans les graphiques de comparaison, une transformation Grafana
+				(<em>Partition by values</em>) découpe la réponse de l’API en
+				une courbe par appareil, et chaque capteur garde la même couleur
+				d’un graphique à l’autre. Un clic sur la légende masque ou isole
+				une courbe.</p>
+		</div>
+
+	</section>
+
+	
+	<section class="part">
+		<div class="prose">
+			<h2 id="resultat">3. Résultat</h2>
+
+			<h3 id="tableau">Tableau de bord</h3>
+			<p>Une deuxième carte, un ESP32 DevKit v1 avec un capteur DHT11, a
+				rejoint la première. Elle publie sur le même topic et au même
+				format JSON. Le broker, le bridge et l’API n’ont pas changé, et
+				la carte apparaît d’elle-même dans les menus de Grafana. Les
+				graphiques de comparaison affichent les deux capteurs côte à
+				côte.</p>
+		</div>
+
+		
+		<figure class="cover">
+			<img src="../img/projets/capteur-meteo/grafana-selecteurs.png"
+				alt="Menus Grafana : Device réglé sur esp32-dht11-001 et Compare avec les deux capteurs sélectionnés.">
+			<figcaption>Les menus Device et Compare du tableau de
+				bord.</figcaption>
+		</figure>
+
+		<figure class="cover">
+			<img src="../img/projets/capteur-meteo/results.png"
+				alt="Graphiques Grafana :température et humidité des deux capteurs, une courbe par capteur.">
+			<figcaption>Température et humidité des deux capteurs dans
+				Grafana.</figcaption>
+		</figure>
+
+		<div class="prose">
+			<h3 id="verifier">Vérifier la chaîne</h3>
+			<p>Tout fonctionne quand :</p>
+			<ul>
+				<li><code>docker compose ps</code> montre les quatre services
+					démarrés, l’API en <em>healthy</em>.</li>
+				<li><code>mosquitto_sub -u bridge -P &lt;MOT_DE_PASSE_2&gt; -t
+					'sensors/#' -v</code> affiche les messages de l’ESP32.</li>
+				<li><code>/readings/latest</code> sur le port 8000 de l’hôte
+					renvoie la dernière mesure.</li>
+				<li>le tableau de bord Grafana affiche l’appareil et ses
+					courbes.</li>
+			</ul>
+		</div>
+	</section>
+	</div>
+	</div>
+
+	<script>
+		const links = [...document.querySelectorAll('.toc a')];
+		const byId = new Map(links.map(a => [a.hash.slice(1), a]));
+		const io = new IntersectionObserver(entries => entries.forEach(e => {
+			if (!e.isIntersecting) return;
+			links.forEach(l => l.removeAttribute('aria-current'));
+			byId.get(e.target.id).setAttribute('aria-current', 'true');
+		}), { rootMargin: '-90px 0px -70% 0px' });
+		byId.forEach((_, id) => io.observe(document.getElementById(id)));
+	</script>
+</main>
+
+	<footer class="site-footer">
+		<div class="wrap footer-row">
+			<span>© 2026 Antoine Champagne</span>
+			
+			<a class="to-top" href="#top"
+				aria-label="Remonter en haut de la page">↑</a>
+		</div>
+	</footer>
+
+	<script>
+		document.querySelectorAll('.theme-toggle').forEach(b => b.addEventListener('click', () => {
+			const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+			document.documentElement.dataset.theme = next;
+			try { localStorage.setItem('theme', next); } catch (e) {}
+		}));
+
+		// Close the mobile menu when one of its links is followed (same-page anchors would stay hidden behind it).
+		document.querySelectorAll('.menu-panel a').forEach(a => a.addEventListener('click', () => a.closest('details').open = false));
+
+		// On the home page, mark the menu links of the section on screen (Projets or Parcours).
+		const sections = ['projets', 'parcours'].map(id => document.getElementById(id)).filter(Boolean);
+		if (sections.length) {
+			const links = [...document.querySelectorAll('nav a[href$="#projets"], nav a[href$="#parcours"]')];
+			const mark = () => {
+				const current = sections.filter(s => s.getBoundingClientRect().top < innerHeight / 2).pop();
+				links.forEach(a => current && a.hash === '#' + current.id ? a.setAttribute('aria-current', 'location') : a.removeAttribute('aria-current'));
+			};
+			addEventListener('scroll', mark, { passive: true });
+			mark();
+		}
+	</script>
+</body>
+</html>

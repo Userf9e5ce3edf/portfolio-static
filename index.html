@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="color-scheme" content="light dark">
+	<script>
+		// Apply the saved theme, else the system one, before first paint to avoid a flash.
+		let saved; try { saved = localStorage.getItem('theme'); } catch (e) {}
+		document.documentElement.dataset.theme = saved || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+	</script>
+	<title>Antoine Champagne, développeur logiciel</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap">
+	<link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+	<header class="site-header">
+		<div class="wrap header-row">
+			<a class="wordmark" href="index.html">Antoine Champagne</a>
+
+			<nav class="nav-desktop" aria-label="Menu principal">
+				<a href="index.html#projets">Projets</a>
+				<a href="index.html#parcours">Parcours</a>
+				<a href="a-propos.html">À propos</a>
+				<a href="mailto:champagneantoine60@gmail.com">Contact</a>
+				<a class="btn btn-secondary" href="cv.pdf" download="CV_Antoine_Champagne.pdf">CV (PDF)</a>
+				<button type="button" class="theme-toggle" aria-label="Basculer entre thème clair et sombre">◐</button>
+			</nav>
+
+			<details class="nav-mobile">
+				<summary class="btn btn-secondary"><span class="when-closed">Menu</span><span class="when-open">Fermer</span></summary>
+				<div class="menu-panel">
+					<nav aria-label="Menu principal">
+						<a href="index.html#projets">Projets</a>
+						<a href="index.html#parcours">Parcours</a>
+						<a href="a-propos.html">À propos</a>
+						<a href="mailto:champagneantoine60@gmail.com">Contact</a>
+					</nav>
+					<a class="btn btn-primary" href="cv.pdf" download="CV_Antoine_Champagne.pdf">Télécharger le CV</a>
+					<button type="button" class="theme-toggle theme-toggle-wide">Thème clair / sombre</button>
+					<a class="menu-email" href="mailto:champagneantoine60@gmail.com">champagneantoine60@gmail.com</a>
+				</div>
+			</details>
+		</div>
+	</header>
+
+	<main>
+	<section class="wrap hero">
+		<h1 class="hero-name">
+			<span>Antoine</span>
+			<span>Champagne</span>
+		</h1>
+		<p class="lede">Développeur logiciel, diplômé du Master MIAGE.</p>
+		<p class="muted">Disponible depuis octobre 2026. CDI partout en France, V.I.E. en Norvège, Danemark, Pays-Bas, Belgique, Luxembourg, Suisse, Irlande, Royaume-Uni ou Australie.</p>
+		<p class="actions">
+			<a class="btn btn-primary" href="#projets">Voir les projets</a>
+			<a class="btn btn-secondary" href="cv.pdf" download="CV_Antoine_Champagne.pdf">Télécharger le CV</a>
+		</p>
+	</section>
+
+	<section id="projets" class="wrap section">
+		<h2>Projets et notes</h2>
+
+		<!-- One line per project, newest first. The first argument is the file name in templates/projets/ without .html. -->
+		<div class="grid">
+			<a class="card" href="projets/capteur-meteo-connecte.html">
+
+	<span class="card-img ph"><img src="img/projets/capteur-meteo/esp32-bme280.png" alt="" loading="lazy"></span>
+
+	<span class="card-date">oct. 2026</span>
+
+	<h3 class="card-title">Capteur météo connecté</h3>
+
+	<p class="card-summary">Température et humidité d’une pièce : un ESP32 publie en MQTT, une API FastAPI stocke les mesures et Grafana les affiche sur mon homelab Proxmox.</p>
+
+	<p class="card-stack">ESP32, MQTT, FastAPI, Grafana</p>
+
+</a>
+			
+		</div>
+	</section>
+
+	<section id="parcours" class="wrap section">
+		<h2>Parcours</h2>
+		<div class="two-col">
+			<div>
+				<h3 class="col-title">Expérience</h3>
+				<ol class="timeline">
+					<li class="current"><span class="muted">mars – sept. 2026</span><strong>Développeur web, outils de test satellite (stage)</strong>Airbus Defence &amp; Space, Toulouse</li>
+					<li><span class="muted">mai – août 2024</span><strong>Développeur web (stage)</strong>ISAGRI Ingénierie, Tillé</li>
+					<li><span class="muted">mars – juin 2023</span><strong>Développeur web (stage)</strong>ISAGRI Ingénierie, Tillé</li>
+					<li><span class="muted">juin – août 2022</span><strong>Technicien informatique (stage)</strong>Centre Hospitalier de Compiègne</li>
+				</ol>
+			</div>
+			<div>
+				<h3 class="col-title">Formation</h3>
+				<ol class="timeline">
+					<li class="current"><span class="muted">2023 – 2026</span><strong>Master MIAGE</strong>UPJV Amiens</li>
+					<li><span class="muted">2022 – 2023</span><strong>Licence pro Réseau et génie informatique</strong>IUT Amiens</li>
+					<li><span class="muted">2021 – 2022</span><strong>DUT Informatique, année spéciale</strong>IUT Amiens</li>
+					<li><span class="muted">2019 – 2021</span><strong>BTS SIO</strong>Amiens</li>
+				</ol>
+			</div>
+		</div>
+	</section>
+
+	<section class="wrap section">
+		<h2>Compétences</h2>
+		<div class="skills">
+			<div><h3 class="col-title">Langages</h3><p>C#, Java, Python, JavaScript / TypeScript, SQL, PHP, C</p></div>
+			<div><h3 class="col-title">Frameworks</h3><p>ASP.NET, Spring Boot, Laravel, FastAPI, WPF, Angular, jQuery, DevExpress, Android (Java)</p></div>
+			<div><h3 class="col-title">Architecture et API</h3><p>Conception et intégration d’API REST, architecture client-serveur (Java RMI), développement full-stack</p></div>
+			<div><h3 class="col-title">Données</h3><p>Modélisation UML, SQL Server, MySQL, ORM (Entity Framework, Hibernate / JPA)</p></div>
+			<div><h3 class="col-title">Outils et pratiques</h3><p>Git, Docker, CI/CD, tests unitaires, Postman, Jira, méthodes agiles</p></div>
+			<div><h3 class="col-title">Systèmes et réseaux</h3><p>Administration systèmes et réseaux (CISCO, Linux, Active Directory)</p></div>
+		</div>
+	</section>
+</main>
+
+	<footer class="site-footer">
+		<div class="wrap footer-row">
+			<span>© 2026 Antoine Champagne</span>
+			
+			<a class="to-top" href="#top" aria-label="Remonter en haut de la page">↑</a>
+		</div>
+	</footer>
+
+	<script>
+		document.querySelectorAll('.theme-toggle').forEach(b => b.addEventListener('click', () => {
+			const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+			document.documentElement.dataset.theme = next;
+			try { localStorage.setItem('theme', next); } catch (e) {}
+		}));
+
+		// Close the mobile menu when one of its links is followed (same-page anchors would stay hidden behind it).
+		document.querySelectorAll('.menu-panel a').forEach(a => a.addEventListener('click', () => a.closest('details').open = false));
+
+		// On the home page, mark the menu links of the section on screen (Projets or Parcours).
+		const sections = ['projets', 'parcours'].map(id => document.getElementById(id)).filter(Boolean);
+		if (sections.length) {
+			const links = [...document.querySelectorAll('nav a[href$="#projets"], nav a[href$="#parcours"]')];
+			const mark = () => {
+				const current = sections.filter(s => s.getBoundingClientRect().top < innerHeight / 2).pop();
+				links.forEach(a => current && a.hash === '#' + current.id ? a.setAttribute('aria-current', 'location') : a.removeAttribute('aria-current'));
+			};
+			addEventListener('scroll', mark, { passive: true });
+			mark();
+		}
+	</script>
+</body>
+</html>

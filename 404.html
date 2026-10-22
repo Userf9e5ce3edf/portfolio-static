@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="color-scheme" content="light dark">
+	<script>
+		// Apply the saved theme, else the system one, before first paint to avoid a flash.
+		let saved; try { saved = localStorage.getItem('theme'); } catch (e) {}
+		document.documentElement.dataset.theme = saved || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+	</script>
+	<title>Page introuvable – Antoine Champagne</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap">
+	<link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+	<header class="site-header">
+		<div class="wrap header-row">
+			<a class="wordmark" href="index.html">Antoine Champagne</a>
+
+			<nav class="nav-desktop" aria-label="Menu principal">
+				<a href="index.html#projets">Projets</a>
+				<a href="index.html#parcours">Parcours</a>
+				<a href="a-propos.html">À propos</a>
+				<a href="mailto:champagneantoine60@gmail.com">Contact</a>
+				<a class="btn btn-secondary" href="cv.pdf" download="CV_Antoine_Champagne.pdf">CV (PDF)</a>
+				<button type="button" class="theme-toggle" aria-label="Basculer entre thème clair et sombre">◐</button>
+			</nav>
+
+			<details class="nav-mobile">
+				<summary class="btn btn-secondary"><span class="when-closed">Menu</span><span class="when-open">Fermer</span></summary>
+				<div class="menu-panel">
+					<nav aria-label="Menu principal">
+						<a href="index.html#projets">Projets</a>
+						<a href="index.html#parcours">Parcours</a>
+						<a href="a-propos.html">À propos</a>
+						<a href="mailto:champagneantoine60@gmail.com">Contact</a>
+					</nav>
+					<a class="btn btn-primary" href="cv.pdf" download="CV_Antoine_Champagne.pdf">Télécharger le CV</a>
+					<button type="button" class="theme-toggle theme-toggle-wide">Thème clair / sombre</button>
+					<a class="menu-email" href="mailto:champagneantoine60@gmail.com">champagneantoine60@gmail.com</a>
+				</div>
+			</details>
+		</div>
+	</header>
+
+	<main class="wrap section">
+	<h1 class="page-title">Cette page n’existe pas</h1>
+	<p class="lede">Le lien est peut-être ancien, ou le projet a changé d’adresse.</p>
+	<p class="actions"><a class="btn btn-primary" href="index.html#projets">Voir les projets</a></p>
+</main>
+
+	<footer class="site-footer">
+		<div class="wrap footer-row">
+			<span>© 2026 Antoine Champagne</span>
+			
+			<a class="to-top" href="#top" aria-label="Remonter en haut de la page">↑</a>
+		</div>
+	</footer>
+
+	<script>
+		document.querySelectorAll('.theme-toggle').forEach(b => b.addEventListener('click', () => {
+			const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+			document.documentElement.dataset.theme = next;
+			try { localStorage.setItem('theme', next); } catch (e) {}
+		}));
+
+		// Close the mobile menu when one of its links is followed (same-page anchors would stay hidden behind it).
+		document.querySelectorAll('.menu-panel a').forEach(a => a.addEventListener('click', () => a.closest('details').open = false));
+
+		// On the home page, mark the menu links of the section on screen (Projets or Parcours).
+		const sections = ['projets', 'parcours'].map(id => document.getElementById(id)).filter(Boolean);
+		if (sections.length) {
+			const links = [...document.querySelectorAll('nav a[href$="#projets"], nav a[href$="#parcours"]')];
+			const mark = () => {
+				const current = sections.filter(s => s.getBoundingClientRect().top < innerHeight / 2).pop();
+				links.forEach(a => current && a.hash === '#' + current.id ? a.setAttribute('aria-current', 'location') : a.removeAttribute('aria-current'));
+			};
+			addEventListener('scroll', mark, { passive: true });
+			mark();
+		}
+	</script>
+</body>
+</html>
